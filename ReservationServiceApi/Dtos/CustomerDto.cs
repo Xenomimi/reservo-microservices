@@ -6,7 +6,6 @@ namespace ReservationServiceApi.Dtos
     {
         public int Id { get; set; }
         public string FullName { get; set; } = null!;
-        public bool IsVIP { get; set; }
-
+        public CustomerInfoDto Info { get; set; } = null!;
     }
 }

@@ -56,11 +56,11 @@ namespace ReservationServiceApi.Services
         {
             // Sprawdzamy czy pokój istnieje oraz czy jest dostępny
             var selectedRooms = await _context.Rooms
-                .Where(r => dto.RoomIds.Contains(r.Id) && r.RoomStatus == RoomStatus.Available)
+                .Where(r => dto.RoomNumbers.Contains(r.RoomNumber) && r.RoomStatus == RoomStatus.Available)
                 .ToListAsync();
 
             // Jeśli coś jest nie tak z pokojami, rzucamy wyjątek
-            if (selectedRooms.Count != dto.RoomIds.Count)
+            if (selectedRooms.Count != dto.RoomNumbers.Count)
                 throw new Exception("Niektóre pokoje są już zarezerwowane.");
 
             // Obliczanie dat oraz ceny
@@ -96,6 +96,10 @@ namespace ReservationServiceApi.Services
             {
                 // klient ma już koszyk — nie dodajemy nowego koszyka dodajemy rezerwację do istniejącego koszyka
                 existingCart.Reservations.Add(reservation);
+                if (dto.PromoCode != null)
+                {
+                    existingCart.PromoCode = dto.PromoCode;
+                }
             }
             else
             {
@@ -145,9 +149,8 @@ namespace ReservationServiceApi.Services
             if (!string.IsNullOrWhiteSpace(cart.PromoCode))
             {
                 var discountData = await _discountResolver.ResolveDiscount(cart.PromoCode);
-                if (discountData != null &&
-                    discountData.DiscountStatus == DiscountStatus.NotUsed &&
-                    (!discountData.RequiresVipCustomer || customer.IsVIP))
+
+                if (discountData != null && discountData.DiscountStatus == DiscountStatus.NotUsed && (!discountData.RequiresVipCustomer || customer.Info.IsVIP))
                 {
                     discountPercentage = discountData.Percentage;
                     await _discountResolver.MarkDiscountAsUsed(discountData.Id);
@@ -159,17 +162,24 @@ namespace ReservationServiceApi.Services
             foreach (var reservation in reservationsToConfirm)
             {
                 var days = (reservation.ReservationEndDate - reservation.ReservationStartDate).Days;
-                var basePrice = reservation.Rooms.Sum(r => r.PricePerNight * days);
+                var basePrice = reservation.Rooms.Sum(r => r.PricePerNight);
+                basePrice = basePrice * days;
+                Console.WriteLine("basePrice: ", basePrice);
+                Console.WriteLine("discountPrecentage: ", discountPercentage);
                 var reservationDiscount = basePrice * discountPercentage / 100;
+
 
                 reservation.TotalPrice = basePrice - reservationDiscount;
                 reservation.Status = Status.Confirmed;
                 reservation.ReservationCartId = cart.Id;
 
                 foreach (var room in reservation.Rooms)
+                {
                     room.RoomStatus = RoomStatus.Reserved;
+                }
 
                 totalDiscount += reservationDiscount;
+                Console.WriteLine(totalDiscount);
             }
 
             cart.DiscountApplied = totalDiscount;
@@ -199,6 +209,7 @@ namespace ReservationServiceApi.Services
             {
                 if (room.RoomStatus == RoomStatus.Reserved)
                     room.RoomStatus = RoomStatus.Available;
+                    // Tutaj przydałoby sie jakos jeszcze wyzerować połączenie z pokojami
             }
 
             await _context.SaveChangesAsync();

@@ -1,6 +1,7 @@
 ﻿using DiscountServiceApi;
 using DiscountServiceApi.Dtos;
 using DiscountServiceApi.Entities;
+using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.EntityFrameworkCore;
 using DiscountStatus = DiscountServiceApi.Entities.DiscountStatus;
 
@@ -14,6 +15,11 @@ namespace DiscountServiceApi.Services
             DiscountDbContext context)
         {
             _context = context;
+        }
+
+        public async Task<Discount?> GetByPromoCode(string code)
+        {
+            return await _context.Discounts.FirstOrDefaultAsync(c => c.Code == code);
         }
 
         public async Task Add(DiscountDto dto)

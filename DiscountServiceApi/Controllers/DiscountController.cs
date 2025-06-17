@@ -14,6 +14,15 @@ namespace DiscountServiceApi.Controllers
             _discountService = discountService;
         }
 
+        [HttpGet("discounts/code/{code}")]
+        public async Task<IActionResult> GetDiscountByPromoCode(string code)
+        {
+            var discount = await _discountService.GetByPromoCode(code);
+            if (discount == null)
+                return NotFound();
+            return Ok(discount);
+        }
+
         [HttpPost("discount")]
         public async Task<IActionResult> Create([FromBody] DiscountDto dto)
         {

@@ -20,7 +20,7 @@ namespace ReservationServiceApi.Resolver
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                HttpResponseMessage response = await client.GetAsync("customers/{customerId}");
+                HttpResponseMessage response = await client.GetAsync($"customers/{customerId}");
                 if (!response.IsSuccessStatusCode)
                     return null;
 

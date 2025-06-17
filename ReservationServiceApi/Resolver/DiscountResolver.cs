@@ -20,19 +20,23 @@ namespace ReservationServiceApi.Resolver
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                HttpResponseMessage response = await client.GetAsync("discounts/code/{code}");
+                HttpResponseMessage response = await client.GetAsync($"discounts/code/{code}");
                 if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine(response);
                     return null;
+                }
 
                 string responseData = await response.Content.ReadAsStringAsync();
                 var discount = JsonConvert.DeserializeObject<DiscountDto>(responseData);
+                Console.WriteLine(discount.Percentage);
                 return discount;
             }
         }
 
         public async Task MarkDiscountAsUsed(int id)
         {
-            string apiUrl = "http://localhost:5045/";
+            string apiUrl = "http://localhost:5107/";
             using (var client = new HttpClient())
             {
                 client.BaseAddress = new Uri(apiUrl);

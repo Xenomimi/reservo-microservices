@@ -20,12 +20,24 @@ namespace CustomerServiceApi.Controllers
         public async Task<IEnumerable<Customer>> Read() => await _customerService.Get();
 
         [HttpGet("customers/{id}")]
-        public async Task<ActionResult<Customer>> GetById(int id)
+        public async Task<ActionResult<CustomerDto>> GetById(int id)
         {
             var customer = await _customerService.GetById(id);
             if (customer == null)
                 return NotFound();
-            return Ok(customer);
+
+            var dto = new CustomerDto
+            {
+                FullName = customer.FullName,
+                Info = new CustomerInfoDto
+                {
+                    Email = customer.Info?.Email ?? "",
+                    PhoneNumber = customer.Info?.PhoneNumber ?? "",
+                    IsVIP = customer.Info?.IsVIP ?? false
+                }
+            };
+
+            return Ok(dto);
         }
 
         [HttpPost("customer")]

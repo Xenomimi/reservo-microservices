@@ -1,16 +1,11 @@
-﻿/*GET / api / reservations – lista rezerwacji
-GET /api/reservations/{id} – szczegóły rezerwacji
-POST /api/reservations – utworzenie rezerwacji
-PUT /api/reservations/{id}/ confirm – potwierdzenie
-PUT /api/reservations/{id}/ cancel – anulowanie*/
-
-using ReservationServiceApi.Entities;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
-using CustomerServiceApi.Entities;
-using CustomerServiceApi.Services;
+using ReservationServiceApi.Dtos;
+using ReservationServiceApi.Services;
+using ReservationServiceApi.Entities;
+using Newtonsoft.Json.Linq;
 
-namespace ReservationServiceApi.Services
+namespace ReservationServiceApi.Controllers
 {
     public class ReservationController : ControllerBase
     {
@@ -21,24 +16,8 @@ namespace ReservationServiceApi.Services
             _reservationService = reservationService;
         }
 
-        //[HttpGet("customers")]
-        //public async Task<IEnumerable<Customer>> Read() => await _reservationService.Get();
-
-        //[HttpGet("customers/{id}")]
-        //public async Task<IActionResult> ReadById(int id)
-        //{
-        //    var customer = await _reservationService.GetById(id);
-
-        //    if (customer == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    return Ok(customer);
-        //}
-
         [HttpPost("reservation")]
-        public async Task<IActionResult> Create([FromBody] Reservation dto)
+        public async Task<IActionResult> Create([FromBody] CreateReservationDto dto)
         {
             if (!ModelState.IsValid)
             {
@@ -48,7 +27,35 @@ namespace ReservationServiceApi.Services
             return Ok();
         }
 
-        [HttpDelete("reservations/{id}")]
+        [HttpPatch("cart/{customerId}/confirm")]
+        public async Task<IActionResult> ConfirmCart(int customerId)
+        {
+            try
+            {
+                await _reservationService.ConfirmCart(customerId);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPatch("reservations/{reservationId}/cancel")]
+        public async Task<IActionResult> CancelReservation(int reservationId)
+        {
+            try
+            {
+                await _reservationService.CancelReservation(reservationId);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpDelete("reservation/{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             var customer = await _reservationService.GetById(id);
@@ -62,24 +69,52 @@ namespace ReservationServiceApi.Services
             return NoContent();
         }
 
-        [HttpPut("reservations/{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] Reservation updatedReservation)
+        [HttpPost("room")]
+        public async Task<IActionResult> AddRoom([FromBody] CreateRoomDto dto)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
+                await _reservationService.AddRoom(dto);
+                return Ok("Pokój dodany.");
             }
-
-            var existingReservation = await _reservationService.GetById(id);
-            if (existingReservation == null)
+            catch (Exception ex)
             {
-                return NotFound();
+                return BadRequest(ex.Message);
             }
-
-            updatedReservation.Id = id;
-            await _reservationService.Update(updatedReservation);
-
-            return NoContent();
         }
+
+        [HttpDelete("room/{roomId}")]
+        public async Task<IActionResult> DeleteRoom(int roomId)
+        {
+            try
+            {
+                await _reservationService.DeleteRoom(roomId);
+                return Ok("Pokój usunięty.");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        //[HttpPut("reservation/{id}")]
+        //public async Task<IActionResult> Update(int id, [FromBody] Reservation updatedReservation)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        return BadRequest(ModelState);
+        //    }
+
+        //    var existingReservation = await _reservationService.GetById(id);
+        //    if (existingReservation == null)
+        //    {
+        //        return NotFound();
+        //    }
+
+        //    updatedReservation.Id = id;
+        //    await _reservationService.Update(updatedReservation);
+
+        //    return NoContent();
+        //}
     }
 }

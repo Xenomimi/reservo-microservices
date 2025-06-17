@@ -1,55 +1,53 @@
 ﻿using DiscountServiceApi;
+using DiscountServiceApi.Dtos;
 using DiscountServiceApi.Entities;
 using Microsoft.EntityFrameworkCore;
+using DiscountStatus = DiscountServiceApi.Entities.DiscountStatus;
 
-namespace CustomerServiceApi.Services
+namespace DiscountServiceApi.Services
 {
     public class DiscountService
     {
-        private DiscountDbContext _context;
+        private readonly DiscountDbContext _context;
 
-        public DiscountService(DiscountDbContext context)
+        public DiscountService(
+            DiscountDbContext context)
         {
             _context = context;
         }
 
-        public async Task<Discount> GetById(int id)
+        public async Task Add(DiscountDto dto)
         {
-            return await _context.Discounts.FirstOrDefaultAsync(x => x.Id == id);
-        }
+            var discount = new Discount
+            {
+                Code = dto.Code,
+                Description = dto.Description,
+                Percentage = dto.Percentage,
+                RequiresVipCustomer = dto.RequiresVipCustomer
+            };
 
-        public async Task<IEnumerable<Discount>> Get()
-        {
-            return await _context.Discounts.ToListAsync();
-        }
-
-        public async Task Add(Discount entity)
-        {
-            _context.Set<Discount>()
-                    .Add(entity);
-
+            _context.Discounts.Add(discount);
             await _context.SaveChangesAsync();
         }
+
         public async Task Delete(int id)
         {
-            var customer = await _context.Discounts.FindAsync(id);
-            if (customer != null)
-            {
-                _context.Discounts.Remove(customer);
-                await _context.SaveChangesAsync();
-            }
+            var discount = await _context.Set<Discount>()
+                                         .FirstOrDefaultAsync(d => d.Id == id);
+            if (discount == null)
+                throw new KeyNotFoundException("Discount not found.");
+            _context.Set<Discount>().Remove(discount);
+            await _context.SaveChangesAsync();
         }
-        public async Task Update(Discount updatedCustomer)
-        {
-            var existing = await _context.Discounts.FindAsync(updatedCustomer.Id);
-            if (existing != null)
-            {
-                existing.DiscountPercent = updatedCustomer.DiscountPercent;
-                existing.ValidFrom = updatedCustomer.ValidFrom;
-                existing.ValidTo = updatedCustomer.ValidTo;
 
-                await _context.SaveChangesAsync();
-            }
+        public async Task MarkAsUsed(int discountId)
+        {
+            var discount = await _context.Set<Discount>()
+                                         .FirstOrDefaultAsync(d => d.Id == discountId);
+            if (discount == null)
+                throw new KeyNotFoundException("Discount not found.");
+            discount.DiscountStatus = DiscountStatus.Used;
+            await _context.SaveChangesAsync();
         }
     }
 }

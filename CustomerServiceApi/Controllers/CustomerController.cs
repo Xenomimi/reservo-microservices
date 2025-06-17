@@ -1,18 +1,9 @@
-﻿/*GET /api/customers – lista klientów
-
-GET /api/customers/{id} – szczegóły klienta
-
-POST /api/customers – utworzenie klienta
-
-PUT /api/customers/{id} – aktualizacja klienta
-
-DELETE /api/customers/{id} – usunięcie klienta*/
-
+﻿using CustomerServiceApi.Dtos;
 using CustomerServiceApi.Entities;
 using CustomerServiceApi.Services;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Reservo.Controllers
+namespace CustomerServiceApi.Controllers
 {
     [ApiController]
     public class CustomerController : ControllerBase
@@ -25,29 +16,26 @@ namespace Reservo.Controllers
             _customerService = customerService;
         }
 
-        //[HttpGet("customers")]
-        //public async Task<IEnumerable<Customer>> Read() => await _customerService.Get();
+        [HttpGet("customers")]
+        public async Task<IEnumerable<Customer>> Read() => await _customerService.Get();
 
-        //[HttpGet("customers/{id}")]
-        //public async Task<IActionResult> ReadById(int id)
-        //{
-        //    var customer = await _customerService.GetById(id);
-
-        //    if (customer == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    return Ok(customer);
-        //}
+        [HttpGet("customers/{id}")]
+        public async Task<ActionResult<Customer>> GetById(int id)
+        {
+            var customer = await _customerService.GetById(id);
+            if (customer == null)
+                return NotFound();
+            return Ok(customer);
+        }
 
         [HttpPost("customer")]
-        public async Task<IActionResult> Create([FromBody] Customer dto)
+        public async Task<IActionResult> Create([FromBody] CustomerDto dto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
+
             await _customerService.Add(dto);
             return Ok();
         }
@@ -66,8 +54,8 @@ namespace Reservo.Controllers
             return NoContent();
         }
 
-        [HttpPut("customers/{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] Customer updatedCustomer)
+        [HttpPatch("customers/{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] CustomerDto dto)
         {
             if (!ModelState.IsValid)
             {
@@ -80,10 +68,9 @@ namespace Reservo.Controllers
                 return NotFound();
             }
 
-            updatedCustomer.Id = id;
-            await _customerService.Update(updatedCustomer);
+            await _customerService.Update(id, dto);
 
-            return NoContent();
+            return Ok();
         }
     }
 }

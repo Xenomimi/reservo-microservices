@@ -1,4 +1,5 @@
-﻿using CustomerServiceApi.Entities;
+﻿using CustomerServiceApi.Dtos;
+using CustomerServiceApi.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace CustomerServiceApi.Services
@@ -12,23 +13,37 @@ namespace CustomerServiceApi.Services
             _context = context;
         }
 
-        public async Task<Customer> GetById(int id)
+        public async Task<Customer?> GetById(int id)
         {
-            return await _context.Customers.FirstOrDefaultAsync(x => x.Id == id);
+            return await _context.Customers
+                .Include(c => c.Info)
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task<IEnumerable<Customer>> Get()
         {
-            return await _context.Customers.ToListAsync();
+            return await _context.Customers
+                .Include(c => c.Info)
+                .ToListAsync();
         }
 
-        public async Task Add(Customer entity)
+        public async Task Add(CustomerDto dto)
         {
-            _context.Set<Customer>()
-                    .Add(entity);
+            var customer = new Customer
+            {
+                FullName = dto.FullName,
+                Info = new CustomerInfo
+                {
+                    Email = dto.Info.Email,
+                    PhoneNumber = dto.Info.PhoneNumber,
+                    IsVIP = dto.Info.IsVIP
+                }
+            };
 
+            _context.Customers.Add(customer);
             await _context.SaveChangesAsync();
         }
+
         public async Task Delete(int id)
         {
             var customer = await _context.Customers.FindAsync(id);
@@ -38,14 +53,22 @@ namespace CustomerServiceApi.Services
                 await _context.SaveChangesAsync();
             }
         }
-        public async Task Update(Customer updatedCustomer)
+        public async Task Update(int customerId, CustomerDto dto)
         {
-            var existing = await _context.Customers.FindAsync(updatedCustomer.Id);
+            var existing = await _context.Customers
+                .Include(c => c.Info)
+                .FirstOrDefaultAsync(c => c.Id == customerId);
+
             if (existing != null)
             {
-                existing.FullName = updatedCustomer.FullName;
-                existing.Email = updatedCustomer.Email;
-                existing.PhoneNumber = updatedCustomer.PhoneNumber;
+                existing.FullName = dto.FullName;
+
+                if (existing.Info != null && dto.Info != null)
+                {
+                    existing.Info.Email = dto.Info.Email;
+                    existing.Info.PhoneNumber = dto.Info.PhoneNumber;
+                    existing.Info.IsVIP = dto.Info.IsVIP;
+                }
 
                 await _context.SaveChangesAsync();
             }

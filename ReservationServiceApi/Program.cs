@@ -1,5 +1,6 @@
 
-using CustomerServiceApi.Extensions;
+using ReservationServiceApi.Extensions;
+using ReservationServiceApi.Resolver;
 
 namespace ReservationServiceApi
 {

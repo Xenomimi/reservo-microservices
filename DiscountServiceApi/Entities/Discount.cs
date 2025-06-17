@@ -8,15 +8,24 @@ namespace DiscountServiceApi.Entities
     {
         [Key]
         public int Id { get; set; }
-        [Required]
-        public int CustomerExternalId { get; set; }
-        [Required, MaxLength(200)]
-        public string CustomerName { get; set; } = null!;
-        [Required]
-        public int DiscountPercent { get; set; }
-        [Required]
-        public DateTime ValidFrom { get; set; }
-        public DateTime ValidTo { get; set; }
 
+        [Required, MaxLength(100)]
+        public string Code { get; set; } = null!;
+
+        public DiscountStatus DiscountStatus { get; set; } = DiscountStatus.NotUsed;
+
+        [MaxLength(300)]
+        public string? Description { get; set; }
+
+        [Required]
+        public decimal Percentage { get; set; }
+
+        public bool RequiresVipCustomer { get; set; } = false;
+    }
+
+    public enum DiscountStatus
+    {
+        NotUsed,
+        Used
     }
 }

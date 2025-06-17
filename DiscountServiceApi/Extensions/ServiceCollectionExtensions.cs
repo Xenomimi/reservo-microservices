@@ -1,4 +1,4 @@
-﻿using CustomerServiceApi.Services;
+﻿using DiscountServiceApi.Services;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 
 namespace DiscountServiceApi.Extensions
@@ -8,7 +8,7 @@ namespace DiscountServiceApi.Extensions
         public static IServiceCollection AddDiscountServices(this IServiceCollection serviceCollection)
         {
             serviceCollection.AddTransient<DiscountDbContext, DiscountDbContext>();
-            serviceCollection.AddTransient <DiscountService>();
+            serviceCollection.AddTransient<DiscountService>();
             return serviceCollection;
         }
     }

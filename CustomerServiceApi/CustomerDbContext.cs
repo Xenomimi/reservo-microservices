@@ -7,6 +7,7 @@ namespace CustomerServiceApi
     {
         private IConfiguration _configuration { get; }
         public DbSet<Customer> Customers { get; set; }
+        public DbSet<CustomerInfo> CustomerInfos { get; set; }
 
         public CustomerContextDb(IConfiguration configuration) : base() { _configuration = configuration; }
         protected override void OnConfiguring(DbContextOptionsBuilder options)
@@ -16,6 +17,11 @@ namespace CustomerServiceApi
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Customer>()
+                .HasOne(c => c.Info)
+                .WithOne()
+                .HasForeignKey<CustomerInfo>(ci => ci.CustomerId);
+
             base.OnModelCreating(modelBuilder);
         }
     }

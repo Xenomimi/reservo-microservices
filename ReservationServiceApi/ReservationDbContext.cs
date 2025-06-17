@@ -7,6 +7,8 @@ namespace ReservationServiceApi
     {
         private IConfiguration _configuration { get; }
         public DbSet<Reservation> Reservations { get; set; }
+        public DbSet<Room> Rooms { get; set; }
+        public DbSet<ReservationCart> ReservationCarts { get; set; }
 
         public ReservationDbContext(IConfiguration configuration) : base() { _configuration = configuration; }
         protected override void OnConfiguring(DbContextOptionsBuilder options)

@@ -9,7 +9,6 @@
   <ItemGroup>
     <Compile Remove="ClientDbContext.cs" />
     <Compile Remove="Controllers\ClientController.cs" />
-    <Compile Remove="Entities\Client.cs" />
     <Compile Remove="Services\ClientService.cs" />
   </ItemGroup>
 

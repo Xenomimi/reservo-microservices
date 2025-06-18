@@ -44,38 +44,42 @@ namespace ReservationServiceApi.Services
             });
         }
 
-
         public async Task Delete(int id)
         {
-            var reservation = await _context.Reservations.FindAsync(id);
-            if (reservation != null)
+            var reservation = await _context.Reservations
+                .Include(r => r.Rooms)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (reservation == null)
+                throw new Exception("Nie znaleziono rezerwacji.");
+
+            foreach (var room in reservation.Rooms)
             {
-                _context.Reservations.Remove(reservation);
-                await _context.SaveChangesAsync();
+                room.RoomStatus = RoomStatus.Available;
+                room.ReservationId = null;
             }
+
+            _context.Reservations.Remove(reservation);
+
+            await _context.SaveChangesAsync();
         }
 
         public async Task<int> Add(CreateReservationDto dto)
         {
-            // Sprawdzamy czy pokój istnieje oraz czy jest dostępny
             var selectedRooms = await _context.Rooms
                 .Where(r => dto.RoomNumbers.Contains(r.RoomNumber) && r.RoomStatus == RoomStatus.Available)
                 .ToListAsync();
 
-            // Jeśli coś jest nie tak z pokojami, rzucamy wyjątek
             if (selectedRooms.Count != dto.RoomNumbers.Count)
                 throw new Exception("Niektóre pokoje są już zarezerwowane.");
 
-            // Obliczanie dat oraz ceny
             var totalDays = (dto.EndDate - dto.StartDate).Days;
             var basePrice = selectedRooms.Sum(r => r.PricePerNight * totalDays);
 
-            // Pobieramy klienta przypisanego do rezerwacji
             var customer = await _customerResolver.ResolveCustomer(dto.CustomerExternalId);
             if (customer == null)
                 throw new Exception("Nie znaleziono klienta.");
 
-            // Tworzymy nową rezerwację
             var reservation = new Reservation
             {
                 CustomerExternalId = dto.CustomerExternalId,
@@ -87,17 +91,15 @@ namespace ReservationServiceApi.Services
                 Status = Status.InCart
             };
 
-            await _context.Reservations.AddAsync(reservation); // Dodajemy rezerwację do bazy danych
-            await _context.SaveChangesAsync(); // Zapisujemy, by mieć ID
+            await _context.Reservations.AddAsync(reservation);
+            await _context.SaveChangesAsync();
 
-            // Sprawdzamy czy istnieje koszyk rezerwacji dla tego klienta
             var existingCart = await _context.ReservationCarts
                 .Include(c => c.Reservations)
                 .FirstOrDefaultAsync(c => c.CustomerExternalId == customer.Id);
 
             if (existingCart != null)
             {
-                // klient ma już koszyk — nie dodajemy nowego koszyka dodajemy rezerwację do istniejącego koszyka
                 existingCart.Reservations.Add(reservation);
                 if (dto.PromoCode != null)
                 {
@@ -106,7 +108,6 @@ namespace ReservationServiceApi.Services
             }
             else
             {
-                // klient nie ma koszyka — tworzymy nowy koszyk z tą rezerwacją
                 var newCart = new ReservationCart
                 {
                     CustomerExternalId = customer.Id,
@@ -153,12 +154,10 @@ namespace ReservationServiceApi.Services
 
         public async Task ConfirmCart(int customerId)
         {
-            // Pobierz klienta
             var customer = await _customerResolver.ResolveCustomer(customerId);
             if (customer == null)
                 throw new Exception("Nie znaleziono klienta.");
 
-            // Pobierz koszyk z przypisanymi rezerwacjami i pokojami
             var cart = await _context.ReservationCarts
                 .Include(c => c.Reservations)
                     .ThenInclude(r => r.Rooms)
@@ -174,7 +173,6 @@ namespace ReservationServiceApi.Services
             if (!reservationsToConfirm.Any())
                 throw new Exception("Koszyk nie zawiera żadnych aktywnych rezerwacji.");
 
-            // Ustal procent rabatu
             decimal discountPercentage = 0.0m;
 
             if (!string.IsNullOrWhiteSpace(cart.PromoCode))
@@ -273,13 +271,21 @@ namespace ReservationServiceApi.Services
             await _context.SaveChangesAsync();
         }
 
-
-        public async Task<IEnumerable<Room>> GetRooms()
+        public async Task<IEnumerable<GetRoomsDto>> GetRooms()
         {
-            return await _context.Rooms.ToListAsync();
+            var rooms = await _context.Rooms.ToListAsync();
+
+            return rooms.Select(r => new GetRoomsDto
+            {
+                Id = r.Id,
+                RoomNumber = r.RoomNumber,
+                PricePerNight = r.PricePerNight,
+                RoomStatus = r.RoomStatus,
+                ReservationId = r.ReservationId
+            });
         }
 
-        public async Task AddRoom(CreateRoomDto dto)
+        public async Task AddRoom(RoomDto dto)
         {
             var roomExists = await _context.Rooms.AnyAsync(r => r.RoomNumber == dto.RoomNumber);
             if (roomExists)

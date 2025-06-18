@@ -89,16 +89,16 @@ namespace ReservationServiceApi.Controllers
         }
 
         [HttpDelete("reservation/{Id}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int Id)
         {
-            var customer = await _reservationService.GetById(id);
+            var customer = await _reservationService.GetById(Id);
 
             if (customer == null)
             {
                 return NotFound();
             }
 
-            await _reservationService.Delete(id);
+            await _reservationService.Delete(Id);
             return NoContent();
         }
 
@@ -112,7 +112,7 @@ namespace ReservationServiceApi.Controllers
         }
 
         [HttpPost("room")]
-        public async Task<IActionResult> AddRoom([FromBody] CreateRoomDto dto)
+        public async Task<IActionResult> AddRoom([FromBody] RoomDto dto)
         {
             try
             {

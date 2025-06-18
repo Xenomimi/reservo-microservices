@@ -40,7 +40,16 @@ namespace ReservationServiceApi.Resolver
             using (var client = new HttpClient())
             {
                 client.BaseAddress = new Uri(apiUrl);
-                await client.PatchAsync($"discounts/{id}/mark-used", null);
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                HttpResponseMessage response = await client.PatchAsync($"discounts/{id}/mark-as-used", null);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync();
+                    throw new Exception($"Nie udało się oznaczyć rabatu jako użyty. Kod: {response.StatusCode}, Treść: {body}");
+                }
             }
         }
     }

@@ -11,6 +11,11 @@ namespace ReservationServiceApi
         public DbSet<ReservationCart> ReservationCarts { get; set; }
 
         public ReservationDbContext(IConfiguration configuration) : base() { _configuration = configuration; }
+
+        public ReservationDbContext(DbContextOptions options) : base(options)
+        {
+        }
+
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
             options.UseNpgsql(@"Server=localhost;Port=5432;database=ReservoReservation;User ID=dev;Password=devpass",

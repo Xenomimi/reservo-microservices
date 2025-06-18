@@ -41,7 +41,7 @@ namespace ReservationServiceApi.Controllers
         public async Task<IActionResult> GetCartContent(int customerId)
         {
             var cartContent = await _reservationService.GetCartContent(customerId);
-            if (cartContent == null)
+            if (cartContent == null || !cartContent.Any())
                 return NotFound();
             return Ok(cartContent);
         }

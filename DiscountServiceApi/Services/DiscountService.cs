@@ -22,6 +22,11 @@ namespace DiscountServiceApi.Services
             return await _context.Discounts.FirstOrDefaultAsync(c => c.Code == code);
         }
 
+        public async Task<IEnumerable<Discount>> GetByPromoCodees()
+        {
+            return await _context.Discounts.ToListAsync();
+        }
+
         public async Task Add(DiscountDto dto)
         {
             var discount = new Discount

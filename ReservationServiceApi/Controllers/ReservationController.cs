@@ -16,6 +16,16 @@ namespace ReservationServiceApi.Controllers
             _reservationService = reservationService;
         }
 
+        [HttpGet("reservations")]
+        public async Task<IActionResult> Get()
+        {
+            var discount = await _reservationService.Get();
+            if (discount == null)
+                return NotFound();
+            return Ok(discount);
+        }
+
+
         [HttpPost("reservation")]
         public async Task<IActionResult> Create([FromBody] CreateReservationDto dto)
         {
@@ -25,6 +35,15 @@ namespace ReservationServiceApi.Controllers
             }
             await _reservationService.Add(dto);
             return Ok();
+        }
+
+        [HttpGet("cart/{customerId}")]
+        public async Task<IActionResult> GetCartContent(int customerId)
+        {
+            var cartContent = await _reservationService.GetCartContent(customerId);
+            if (cartContent == null)
+                return NotFound();
+            return Ok(cartContent);
         }
 
         [HttpPatch("cart/{customerId}/confirm")]
@@ -41,12 +60,12 @@ namespace ReservationServiceApi.Controllers
             }
         }
 
-        [HttpPatch("reservations/{reservationId}/cancel")]
-        public async Task<IActionResult> CancelReservation(int reservationId)
+        [HttpPatch("reservation/{Id}/complete")]
+        public async Task<IActionResult> CompleteReservation(int Id)
         {
             try
             {
-                await _reservationService.CancelReservation(reservationId);
+                await _reservationService.CompleteReservation(Id);
                 return NoContent();
             }
             catch (Exception ex)
@@ -55,7 +74,21 @@ namespace ReservationServiceApi.Controllers
             }
         }
 
-        [HttpDelete("reservation/{id}")]
+        [HttpPatch("reservation/{Id}/cancel")]
+        public async Task<IActionResult> CancelReservation(int Id)
+        {
+            try
+            {
+                await _reservationService.CancelReservation(Id);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpDelete("reservation/{Id}")]
         public async Task<IActionResult> Delete(int id)
         {
             var customer = await _reservationService.GetById(id);
@@ -67,6 +100,15 @@ namespace ReservationServiceApi.Controllers
 
             await _reservationService.Delete(id);
             return NoContent();
+        }
+
+        [HttpGet("rooms")]
+        public async Task<IActionResult> GetRooms()
+        {
+            var rooms = await _reservationService.GetRooms();
+            if (rooms == null)
+                return NotFound();
+            return Ok(rooms);
         }
 
         [HttpPost("room")]

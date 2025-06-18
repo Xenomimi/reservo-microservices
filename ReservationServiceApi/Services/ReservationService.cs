@@ -20,7 +20,7 @@ namespace ReservationServiceApi.Services
             _discountResolver = discountResolver;
         }
 
-        public async Task<Reservation> GetById(int id)
+        public async Task<Reservation?> GetById(int id)
         {
             return await _context.Reservations.FirstOrDefaultAsync(x => x.Id == id);
         }
@@ -119,6 +119,34 @@ namespace ReservationServiceApi.Services
             return reservation.Id;
         }
 
+        public async Task<IEnumerable<ReservationCartItemDto>> GetCartContent(int customerId)
+        {
+            var cart = await _context.ReservationCarts
+                .Include(c => c.Reservations)
+                    .ThenInclude(r => r.Rooms)
+                .FirstOrDefaultAsync(c => c.CustomerExternalId == customerId);
+
+            if (cart == null)
+                return Enumerable.Empty<ReservationCartItemDto>();
+
+            return cart.Reservations
+                .Where(r => r.Status == Status.InCart)
+                .Select(r => new ReservationCartItemDto
+                {
+                    ReservationId = r.Id,
+                    CustomerName = r.CustomerName,
+                    Start = r.ReservationStartDate,
+                    End = r.ReservationEndDate,
+                    Price = r.TotalPrice,
+                    Rooms = r.Rooms.Select(room => new RoomDto
+                    {
+                        RoomNumber = room.RoomNumber,
+                        PricePerNight = room.PricePerNight
+                    }).ToList()
+                }).ToList();
+        }
+
+
 
         public async Task ConfirmCart(int customerId)
         {
@@ -187,6 +215,32 @@ namespace ReservationServiceApi.Services
             await _context.SaveChangesAsync();
         }
 
+        public async Task CompleteReservation(int reservationId)
+        {
+            var reservation = await _context.Reservations
+                .Include(r => r.Rooms)
+                .FirstOrDefaultAsync(r => r.Id == reservationId);
+
+            if (reservation == null)
+                throw new Exception("Nie znaleziono rezerwacji.");
+
+            var now = DateTime.UtcNow;
+
+            if (now < reservation.ReservationEndDate)
+                throw new Exception("Nie można zakończyć rezerwacji przed jej końcem.");
+
+            reservation.Status = Status.Completed;
+
+            foreach (var room in reservation.Rooms)
+            {
+                room.RoomStatus = RoomStatus.Available;
+            }
+
+            reservation.Rooms.Clear();
+
+            await _context.SaveChangesAsync();
+        }
+
         public async Task CancelReservation(int reservationId)
         {
             var reservation = await _context.Reservations
@@ -209,10 +263,17 @@ namespace ReservationServiceApi.Services
             {
                 if (room.RoomStatus == RoomStatus.Reserved)
                     room.RoomStatus = RoomStatus.Available;
-                    // Tutaj przydałoby sie jakos jeszcze wyzerować połączenie z pokojami
             }
 
+            reservation.Rooms.Clear();
+
             await _context.SaveChangesAsync();
+        }
+
+
+        public async Task<IEnumerable<Room>> GetRooms()
+        {
+            return await _context.Rooms.ToListAsync();
         }
 
         public async Task AddRoom(CreateRoomDto dto)

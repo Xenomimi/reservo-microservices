@@ -14,6 +14,15 @@ namespace DiscountServiceApi.Controllers
             _discountService = discountService;
         }
 
+        [HttpGet("discounts")]
+        public async Task<IActionResult> Get()
+        {
+            var discount = await _discountService.GetByPromoCodees();
+            if (discount == null)
+                return NotFound();
+            return Ok(discount);
+        }
+
         [HttpGet("discounts/code/{code}")]
         public async Task<IActionResult> GetDiscountByPromoCode(string code)
         {
@@ -40,6 +49,24 @@ namespace DiscountServiceApi.Controllers
             try
             {
                 await _discountService.MarkAsUsed(id);
+                return Ok();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound("Discount not found.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        [HttpDelete("discounts/{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                await _discountService.Delete(id);
                 return Ok();
             }
             catch (KeyNotFoundException)

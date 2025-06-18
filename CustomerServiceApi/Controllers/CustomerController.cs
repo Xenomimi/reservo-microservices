@@ -28,6 +28,7 @@ namespace CustomerServiceApi.Controllers
 
             var dto = new CustomerDto
             {
+                Id = customer.Id,
                 FullName = customer.FullName,
                 Info = new CustomerInfoDto
                 {

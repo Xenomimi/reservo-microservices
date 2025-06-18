@@ -24,10 +24,26 @@ namespace ReservationServiceApi.Services
         {
             return await _context.Reservations.FirstOrDefaultAsync(x => x.Id == id);
         }
-        public async Task<IEnumerable<Reservation>> Get()
+        public async Task<IEnumerable<ReservationDto>> Get()
         {
-            return await _context.Reservations.ToListAsync();
+            var reservations = await _context.Reservations
+                .Include(r => r.Rooms)
+                .ToListAsync();
+
+            return reservations.Select(r => new ReservationDto
+            {
+                Id = r.Id,
+                CustomerExternalId = r.CustomerExternalId,
+                CustomerName = r.CustomerName,
+                ReservationStartDate = r.ReservationStartDate,
+                ReservationEndDate = r.ReservationEndDate,
+                TotalPrice = r.TotalPrice,
+                Status = r.Status,
+                ReservationCartId = r.ReservationCartId,
+                Rooms = r.Rooms.ToList()
+            });
         }
+
 
         public async Task Delete(int id)
         {
@@ -38,19 +54,6 @@ namespace ReservationServiceApi.Services
                 await _context.SaveChangesAsync();
             }
         }
-        //public async Task Update(Reservation updatedReservation)
-        //{
-        //    var existing = await _context.Reservations.FindAsync(updatedReservation.Id);
-        //    if (existing != null)
-        //    {
-        //        existing.ReservationStartDate = updatedReservation.ReservationStartDate;
-        //        existing.ReservationEndDate = updatedReservation.ReservationEndDate;
-        //        existing.Status = updatedReservation.Status;
-        //        existing.TotalPrice = updatedReservation.TotalPrice;
-
-        //        await _context.SaveChangesAsync();
-        //    }
-        //}
 
         public async Task<int> Add(CreateReservationDto dto)
         {

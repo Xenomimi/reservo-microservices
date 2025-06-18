@@ -19,10 +19,10 @@ namespace ReservationServiceApi.Controllers
         [HttpGet("reservations")]
         public async Task<IActionResult> Get()
         {
-            var discount = await _reservationService.Get();
-            if (discount == null)
+            var reservations = await _reservationService.Get();
+            if (reservations == null)
                 return NotFound();
-            return Ok(discount);
+            return Ok(reservations);
         }
 
 
@@ -138,25 +138,5 @@ namespace ReservationServiceApi.Controllers
                 return BadRequest(ex.Message);
             }
         }
-
-        //[HttpPut("reservation/{id}")]
-        //public async Task<IActionResult> Update(int id, [FromBody] Reservation updatedReservation)
-        //{
-        //    if (!ModelState.IsValid)
-        //    {
-        //        return BadRequest(ModelState);
-        //    }
-
-        //    var existingReservation = await _reservationService.GetById(id);
-        //    if (existingReservation == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    updatedReservation.Id = id;
-        //    await _reservationService.Update(updatedReservation);
-
-        //    return NoContent();
-        //}
     }
 }

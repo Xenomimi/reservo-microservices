@@ -9,6 +9,10 @@ namespace DiscountServiceApi
         public DbSet<Discount> Discounts { get; set; }
 
         public DiscountDbContext(IConfiguration configuration) : base() { _configuration = configuration; }
+        public DiscountDbContext(DbContextOptions<DiscountDbContext> options) : base(options)
+        {
+        }
+
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
             options.UseNpgsql(@"Server=localhost;Port=5432;database=ReservoDiscount;User ID=dev;Password=devpass",
